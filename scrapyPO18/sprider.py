@@ -90,12 +90,12 @@ def getChapter(chapter_url, chapter_order, time):
         getChapter(chapter_url, chapter_order, time)
 
 
-book_number = '808406'
+book_number = 'YOUR TARGET BOOK'
 content_url = 'https://www.po18.tw/books/' + book_number + '/articles'
-chapter_page_sum = 2
-cookies = 'bgcolor=bg-white; word=select-m; authtoken1=bG9vZmFoNjQ%3D; authtoken6=1; _ga_NP3L2Y008Y=GS1.2.1721314755.1.0.1721314755.0.0.0; _ga=GA1.1.1595003391.1716039011; _po18rf-tk001=9e8cd2b8cbe48695e1b7991465385189f91977c5ea5d5a35bd90bf25a911f8aba%3A2%3A%7Bi%3A0%3Bs%3A13%3A%22_po18rf-tk001%22%3Bi%3A1%3Bs%3A32%3A%22Pao2MbJsWZXr8Giv8ncjj4tOXZEWgvC2%22%3B%7D; _paabbcc=tk1ivb2i4dqfrs02a35oqgi457; url=https%3A%2F%2Fwww.po18.tw; authtoken2=ZjQ0Y2VmMjM2NjMyYTY4ZDc4MDJhNjNhNzIwY2FkMGU%3D; authtoken3=498992845; authtoken4=4273082197; authtoken5=1723281230; _ga_RC5YJ9JK88=GS1.1.1723281211.16.1.1723281232.0.0.0; _ga_7BSERVZP9K=GS1.1.1723295846.24.0.1723295846.0.0.0'
+chapter_page_sum = 1
+cookies = 'YOUR COOKIE'
 start = 0
 session = requests.session()
-txt = open('/Users/nicoleyip/Desktop/Yip, Nicole/po18/' + book_number + '.txt', 'a')
+txt = open('YOUR PATH' + book_number + '.txt', 'a')
 getContent(1)
 txt.close()
