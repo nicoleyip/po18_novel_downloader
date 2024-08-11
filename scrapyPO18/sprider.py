@@ -2,10 +2,50 @@
 
 import requests
 from bs4 import BeautifulSoup
+import time
 
 
-def login():
+def getContent(page):
+    headers = {
+        'Accept': 'text/html,application/xhtml+xml,application/xml;'
+                      'q=0.9,image/webp,image/apng,*/*;'
+                      'q=0.8,application/signed-exchange;v=b3',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+        'Cache-Control': 'max-age=0',
+        'Connection': 'keep-alive',
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Upgrade-Insecure-Requests': '1',
+        'Host': 'www.po18.tw',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36',
+        'Cookie': cookies
+        }
+    global content_url
+    if page > 1:
+        content_url = content_url + '?page=' + str(page)
+    response = session.get(content_url, headers=headers)
+    print('page %d %s processing...' % (page, content_url))
+    soup = BeautifulSoup(response.text, 'lxml')
+    chapter_list = soup.find_all(name='a', attrs={'class': 'btn_L_blue'})
+    chapter_order_list = soup.find_all(name='div', attrs={'class': 'l_counter'})
+
+    global start
+    for i in range(start, len(chapter_list)):
+        chapter_url = 'https://www.po18.tw' + chapter_list[i].get('href')
+        chapter_order = chapter_order_list[i].get_text()
+        print('%d %s processing...' % (i, chapter_url))
+        time.sleep(0.5)
+        getChapter(chapter_url, chapter_order, 10)
+
+    global chapter_page_sum
+    if (chapter_page_sum - page) > 0:
+        page += 1
+        getContent(page)
+
+
+def getChapter(chapter_url, chapter_order, time):
     try:
+        text_url = chapter_url.replace("articles", "articlescontent")
         headers = {
             'Accept': 'text/html,application/xhtml+xml,application/xml;'
                       'q=0.9,image/webp,image/apng,*/*;'
@@ -15,68 +55,10 @@ def login():
             'Cache-Control': 'max-age=0',
             'Connection': 'keep-alive',
             'Content-Type': 'application/x-www-form-urlencoded',
-            'Origin': 'https://members.po18.tw',
-            'Referer': 'https://members.po18.tw/apps/login.php',
             'Upgrade-Insecure-Requests': '1',
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_1) '
-                          'AppleWebKit/537.36 (KHTML, like Gecko) '
-                          'Chrome/78.0.3904.108 Safari/537.36'
-        }
-        account = 'YOUR ACCOUNT'
-        pwd = 'YOUR PASSWORD'
-        data = {
-            'account': account,
-            'pwd': pwd,
-            'remember_me': '1',
-            'comefrom_id': '2',
-            'owner': 'COC',
-            'client_ip': 'YOUR IP',
-            'url': 'https://www.po18.tw/'
-        }
-        login_url = 'https://members.po18.tw/apps/login.php'
-        login_html = session.post(login_url, data=data, headers=headers, timeout=10)
-        if login_html.url == 'https://members.po18.tw/apps/login.php':
-            print('Incorrect username or password, please check and re-edit.')
-        elif login_html.url == 'https://www.po18.tw' or 'https://www.po18.tw/panel':
-            print('Welcome, ' + account + '. The spider is working...')
-            return True
-        else:
-            print(login_html)
-            print('Unknown error.')
-        return False
-    except requests.exceptions.ConnectionError:
-            print('ConnectionError, re-login...')
-            login()
-    except requests.exceptions.ReadTimeout or RuntimeError:
-            print('Timeout, re-login...')
-            login()
-
-
-def getContent(page):
-    global content_url
-    if page > 1:
-        content_url = content_url + '?page=' + str(page)
-    response = session.get(content_url)
-    print('page %d %s processing...' % (page, content_url))
-    soup = BeautifulSoup(response.text, 'lxml')
-    chapter_list = soup.find_all(name='a', attrs={'class': 'btn_L_blue'})
-
-    global start
-    for i in range(start, len(chapter_list)):
-        chapter_url = 'https://www.po18.tw' + chapter_list[i].get('href')
-        print('%d %s processing...' % (i, chapter_url))
-        getChapter(chapter_url, 10)
-
-    global chapter_sum
-    if (chapter_sum - page*100) > 1:
-        page += 1
-        getContent(page)
-
-
-def getChapter(chapter_url, time):
-    try:
-        text_url = chapter_url.replace("articles", "articlescontent")
-        headers = {
+            'Host': 'www.po18.tw',
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36',
+            'Cookie': cookies,
             'Referer': chapter_url
         }
         response = session.get(text_url, headers=headers, timeout=10)
@@ -84,33 +66,36 @@ def getChapter(chapter_url, time):
         soup = BeautifulSoup(chapter, 'lxml')
         chapter_title = soup.find('h1').get_text()
         if len(soup.find_all('p')) < 10:
-            time = time - 1
             print('Unknown error, reloading... %d' % (11 - time))
-            session.getChapter(chapter_url, time)
+            time = time - 1
+            getChapter(chapter_url, chapter_order, time)
         if time == 1:
             print('Failed, pass.')
             pass
         else:
             print('%s processing...' % (chapter_title))
-            txt.write(chapter_title + '\n')
+            txt.write('第' + chapter_order + '章 ' + chapter_title + '\n')
             text = soup.find_all(name='p')
             for row in text:
                 txt.write(row.get_text())
+            txt.write('\n')
+            txt.write('\n')
+            txt.write('\n')
             print('%s done.' % chapter_title)
     except requests.exceptions.ConnectionError:
         print('ConnectionError, reloading...')
-        session.getChapter(chapter_url, time)
+        getChapter(chapter_url, chapter_order, time)
     except requests.exceptions.ReadTimeout or RuntimeError:
         print('ReadTimeout or RuntimeError, reloading...')
-        session.getChapter(chapter_url, time)
+        getChapter(chapter_url, chapter_order, time)
 
 
-book_number = 'YOUR TARGET BOOK'
+book_number = '808406'
 content_url = 'https://www.po18.tw/books/' + book_number + '/articles'
-chapter_sum = 000
+chapter_page_sum = 2
+cookies = 'bgcolor=bg-white; word=select-m; authtoken1=bG9vZmFoNjQ%3D; authtoken6=1; _ga_NP3L2Y008Y=GS1.2.1721314755.1.0.1721314755.0.0.0; _ga=GA1.1.1595003391.1716039011; _po18rf-tk001=9e8cd2b8cbe48695e1b7991465385189f91977c5ea5d5a35bd90bf25a911f8aba%3A2%3A%7Bi%3A0%3Bs%3A13%3A%22_po18rf-tk001%22%3Bi%3A1%3Bs%3A32%3A%22Pao2MbJsWZXr8Giv8ncjj4tOXZEWgvC2%22%3B%7D; _paabbcc=tk1ivb2i4dqfrs02a35oqgi457; url=https%3A%2F%2Fwww.po18.tw; authtoken2=ZjQ0Y2VmMjM2NjMyYTY4ZDc4MDJhNjNhNzIwY2FkMGU%3D; authtoken3=498992845; authtoken4=4273082197; authtoken5=1723281230; _ga_RC5YJ9JK88=GS1.1.1723281211.16.1.1723281232.0.0.0; _ga_7BSERVZP9K=GS1.1.1723295846.24.0.1723295846.0.0.0'
 start = 0
 session = requests.session()
-if login():
-    txt = open('YOUR PATH' + book_number + '.txt', 'a')
-    getContent(1)
-    txt.close()
+txt = open('/Users/nicoleyip/Desktop/Yip, Nicole/po18/' + book_number + '.txt', 'a')
+getContent(1)
+txt.close()
